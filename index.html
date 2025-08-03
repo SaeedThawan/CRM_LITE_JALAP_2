@@ -47,7 +47,7 @@
       <div id="normalVisitRelatedFields">
         <div class="form-group">
           <label for="customerType">نوع العميل</label>
-          <select id="customerType" name="Customer_Type" class="mt-1" required>
+          <select id="customerType" name="Customer_Type" class="mt-1">
             <option value="">اختر نوع العميل</option>
             <option value="حلويات">حلويات 🍬</option>
             <option value="غذائية">غذائية 🍞</option>
@@ -58,13 +58,13 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div class="form-group">
             <label for="visitPurpose">غرض الزيارة</label>
-            <select id="visitPurpose" name="Visit_Purpose" class="mt-1" required>
+            <select id="visitPurpose" name="Visit_Purpose" class="mt-1">
               <option value="">اختر غرض الزيارة</option>
               </select>
           </div>
           <div class="form-group">
             <label for="visitOutcome">نتيجة الزيارة</label>
-            <select id="visitOutcome" name="Visit_Outcome" class="mt-1" required>
+            <select id="visitOutcome" name="Visit_Outcome" class="mt-1">
               <option value="">اختر نتيجة الزيارة</option>
               </select>
           </div>
@@ -91,33 +91,7 @@
             </datalist>
 
         <div id="inventoryItemsContainer" class="space-y-4">
-          <div class="inventory-item border border-yellow-200 p-4 rounded-lg bg-white relative">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div class="form-group">
-                <label>البحث عن المنتج</label>
-                <input type="text" name="Inventory_Product_Name_AR" list="inventoryList" placeholder="ابحث..." required />
-              </div>
-              <div class="form-group">
-                <label>الكمية</label>
-                <input type="number" name="Inventory_Quantity" min="1" placeholder="أدخل الكمية" required />
-              </div>
-              <div class="form-group">
-                <label>تاريخ الانتهاء</label>
-                <input type="date" name="Expiration_Date" />
-              </div>
-              <div class="form-group">
-                <label>الوحدة</label>
-                <select name="Unit_Label" required>
-                  <option value="">اختر الوحدة</option>
-                  <option value="علبة">علبة</option>
-                  <option value="شد">شد</option>
-                  <option value="باكت">باكت</option>
-                </select>
-              </div>
-            </div>
-            <button type="button" class="removeInventoryItem absolute top-2 left-2 text-red-600 text-sm">❌ حذف</button>
           </div>
-        </div>
 
         <div class="text-center mt-4">
           <button type="button" id="addInventoryItem" class="btn-secondary">➕ إضافة منتج آخر</button>
