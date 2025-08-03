@@ -186,11 +186,11 @@ function addInventoryItem() {
     const template = `
         <div class="inventory-item border p-4 rounded relative bg-white">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div><label>المنتج</label><input type="text" name="Inventory_Product_Name_AR" list="inventoryList"></div>
-                <div><label>الكمية</label><input type="number" name="Inventory_Quantity" min="0"></div>
+                <div><label>المنتج</label><input type="text" name="Inventory_Product_Name_AR" list="inventoryList" required></div>
+                <div><label>الكمية</label><input type="number" name="Inventory_Quantity" min="1" required></div>
                 <div><label>تاريخ الانتهاء</label><input type="date" name="Expiration_Date"></div>
                 <div><label>الوحدة</label>
-                    <select name="Unit_Label">
+                    <select name="Unit_Label" required>
                         <option value="">اختر الوحدة</option>
                         <option value="علبة">علبة</option>
                         <option value="شد">شد</option>
@@ -236,145 +236,135 @@ async function handleSubmit(event) {
     const selectedVisitType = visitTypeSelect.value;
     let payload = {};
 
-    try {
-        // ✅ التحقق الأساسي من الحقول
-        if (!salesRepNameSelect.value || !customerNameInput.value || !visitTypeSelect.value) {
-            showWarningMessage('يرجى تعبئة حقول المندوب والعميل ونوع الزيارة.');
+    if (!salesRepNameSelect.value || !customerNameInput.value || !visitTypeSelect.value) {
+        showWarningMessage('يرجى تعبئة حقول المندوب والعميل ونوع الزيارة.');
+        submitBtn.disabled = false;
+        loadingSpinner.classList.add('hidden');
+        return;
+    }
+
+    if (selectedVisitType !== 'جرد استثنائي' &&
+        (!visitPurposeSelect.value || !visitOutcomeSelect.value || !customerTypeSelect.value)) {
+        showWarningMessage('يرجى تعبئة حقول الغرض والنتيجة ونوع العميل.');
+        submitBtn.disabled = false;
+        loadingSpinner.classList.add('hidden');
+        return;
+    }
+
+    if (selectedVisitType === 'جرد استثنائي') {
+        const collectedInventoryData = [];
+
+        inventoryItemsContainer.querySelectorAll('.inventory-item').forEach(div => {
+            const productName = div.querySelector('[name="Inventory_Product_Name_AR"]')?.value || '';
+            const quantity = div.querySelector('[name="Inventory_Quantity"]')?.value || '';
+            const unitLabel = div.querySelector('[name="Unit_Label"]')?.value || '';
+            const expirationDate = div.querySelector('[name="Expiration_Date"]')?.value || '';
+            const entryUserName = formData.get('Entry_User_Name');
+
+            if (!productName && !quantity && !unitLabel && !expirationDate) return;
+
+            const selectedOption = inventoryListDatalist.querySelector(`option[value="${productName}"]`);
+            const productDetails = {};
+            if (selectedOption) {
+                for (const key in selectedOption.dataset) {
+                    productDetails[key] = selectedOption.dataset[key];
+                }
+            }
+
+            collectedInventoryData.push({
+                Inventory_ID: generateInventoryID(),
+                Timestamp: formatTimestamp(now),
+                Entry_User_Name: entryUserName, // تم تصحيح هذا السطر
+                Sales_Rep_Name_AR: formData.get('Sales_Rep_Name_AR'),
+                Customer_Name_AR: formData.get('Customer_Name_AR'),
+                Customer_Code: customersMain.find(c => c.Customer_Name_AR === formData.get('Customer_Name_AR'))?.Customer_Code || '',
+                Product_Name_AR: productName,
+                Product_Code: productDetails.productCode || '',
+                Category: productDetails.category || '',
+                Package_Type: productDetails.packageType || '',
+                Unit_Size: productDetails.unitSize || '',
+                Quantity: quantity,
+                Expiration_Date: expirationDate,
+                Unit_Label: unitLabel,
+                Notes: formData.get('Notes') || ''
+            });
+        });
+
+        if (collectedInventoryData.length === 0) {
+            showWarningMessage('يجب إدخال بيانات منتج واحد على الأقل.');
+            submitBtn.disabled = false;
+            loadingSpinner.classList.add('hidden');
             return;
         }
 
-        if (selectedVisitType === 'جرد استثنائي') {
-            const collectedInventoryData = [];
-
-            inventoryItemsContainer.querySelectorAll('.inventory-item').forEach(div => {
-                const productName = div.querySelector('[name="Inventory_Product_Name_AR"]')?.value || '';
-                const quantity = div.querySelector('[name="Inventory_Quantity"]')?.value || '';
-                const unitLabel = div.querySelector('[name="Unit_Label"]')?.value || '';
-                const expirationDate = div.querySelector('[name="Expiration_Date"]')?.value || '';
-
-                // تخطي العنصر إذا كانت جميع الحقول فارغة
-                if (!productName && !quantity && !unitLabel && !expirationDate) return;
-
-                // التحقق من أن حقول الجرد الضرورية غير فارغة
-                if (!productName || !quantity || !unitLabel) {
-                    throw new Error('يرجى تعبئة جميع حقول المنتج (الاسم، الكمية، الوحدة) في قسم الجرد.');
-                }
-
-                const selectedOption = inventoryListDatalist.querySelector(`option[value="${productName}"]`);
-                const productDetails = {};
-                if (selectedOption) {
-                    for (const key in selectedOption.dataset) {
-                        productDetails[key] = selectedOption.dataset[key];
-                    }
-                }
-
-                collectedInventoryData.push({
-                    Inventory_ID: generateInventoryID(),
-                    Timestamp: formatTimestamp(now),
-                    Entry_User_Name: formData.get('Entry_User_Name'),
-                    Sales_Rep_Name_AR: formData.get('Sales_Rep_Name_AR'),
-                    Customer_Name_AR: formData.get('Customer_Name_AR'),
-                    Customer_Code: customersMain.find(c => c.Customer_Name_AR === formData.get('Customer_Name_AR'))?.Customer_Code || '',
-                    Product_Name_AR: productName,
-                    Product_Code: productDetails.productCode || '',
-                    Category: productDetails.category || '',
-                    Package_Type: productDetails.packageType || '',
-                    Unit_Size: productDetails.unitSize || '',
-                    Quantity: quantity,
-                    Expiration_Date: expirationDate,
-                    Unit_Label: unitLabel,
-                    Notes: formData.get('Notes') || ''
-                });
-            });
-
-            if (collectedInventoryData.length === 0) {
-                showWarningMessage('يجب إدخال بيانات منتج واحد على الأقل.');
-                return;
-            }
-
-            payload = {
-                sheetName: 'Inventory_Logs',
-                data: collectedInventoryData
-            };
-        } else {
-            // ✅ التحقق من حقول الزيارات العادية
-            if (!visitPurposeSelect.value || !visitOutcomeSelect.value || !customerTypeSelect.value) {
-                showWarningMessage('يرجى تعبئة حقول الغرض والنتيجة ونوع العميل.');
-                return;
-            }
-
-            if (!validateProductStatuses()) {
-                return;
-            }
-
-            const dataToSubmit = {
-                Visit_ID: generateVisitID(),
-                Customer_Name_AR: formData.get('Customer_Name_AR'),
-                Customer_Code: customersMain.find(c => c.Customer_Name_AR === formData.get('Customer_Name_AR'))?.Customer_Code || '',
-                Sales_Rep_Name_AR: formData.get('Sales_Rep_Name_AR'),
-                Visit_Date: formatDate(now),
-                Visit_Time: formatTime(now),
-                Visit_Purpose: formData.get('Visit_Purpose'),
-                Visit_Outcome: formData.get('Visit_Outcome'),
-                Visit_Type_Name_AR: formData.get('Visit_Type_Name_AR'),
-                Entry_User_Name: formData.get('Entry_User_Name'),
-                Timestamp: formatTimestamp(now),
-                Customer_Type: formData.get('Customer_Type'),
-                Notes: formData.get('Notes') || ''
-            };
-
-            const available = [], unavailable = [];
-            productsDisplayDiv.querySelectorAll('.product-item').forEach(div => {
-                const name = div.querySelector('label').textContent;
-                const selected = div.querySelector('input[type="radio"]:checked');
-                if (selected) {
-                    (selected.value === 'متوفر' ? available : unavailable).push(name);
-                }
-            });
-
-            dataToSubmit.Available_Products_Names = available.join(', ');
-            dataToSubmit.Unavailable_Products_Names = unavailable.join(', ');
-
-            payload = {
-                sheetName: 'Visit_Logs',
-                data: [dataToSubmit]
-            };
+        payload = {
+            sheetName: 'Inventory_Logs',
+            data: collectedInventoryData
+        };
+    } else {
+        if (!validateProductStatuses()) {
+            submitBtn.disabled = false;
+            loadingSpinner.classList.add('hidden');
+            return;
         }
 
-        console.log("📤 Sending payload:", payload);
+        const dataToSubmit = {
+            Visit_ID: generateVisitID(),
+            Customer_Name_AR: formData.get('Customer_Name_AR'),
+            Customer_Code: customersMain.find(c => c.Customer_Name_AR === formData.get('Customer_Name_AR'))?.Customer_Code || '',
+            Sales_Rep_Name_AR: formData.get('Sales_Rep_Name_AR'),
+            Visit_Date: formatDate(now),
+            Visit_Time: formatTime(now),
+            Visit_Purpose: formData.get('Visit_Purpose'),
+            Visit_Outcome: formData.get('Visit_Outcome'),
+            Visit_Type_Name_AR: formData.get('Visit_Type_Name_AR'),
+            Entry_User_Name: formData.get('Entry_User_Name'),
+            Timestamp: formatTimestamp(now),
+            Customer_Type: formData.get('Customer_Type'),
+            Notes: formData.get('Notes') || ''
+        };
 
-        // ✅ إرسال البيانات مع معالجة استجابة الخادم
-        const response = await fetch(GOOGLE_SHEETS_WEB_APP_URL, {
+        const available = [], unavailable = [];
+        productsDisplayDiv.querySelectorAll('.product-item').forEach(div => {
+            const name = div.querySelector('label').textContent;
+            const selected = div.querySelector('input[type="radio"]:checked');
+            if (selected) {
+                (selected.value === 'متوفر' ? available : unavailable).push(name);
+            }
+        });
+
+        dataToSubmit.Available_Products_Names = available.join(', ');
+        dataToSubmit.Unavailable_Products_Names = unavailable.join(', ');
+
+        payload = {
+            sheetName: 'Visit_Logs',
+            data: [dataToSubmit]
+        };
+    }
+
+    // ✅ إرسال البيانات
+    console.log("📤 Sending payload:", payload);
+
+    try {
+        await fetch(GOOGLE_SHEETS_WEB_APP_URL, {
             method: 'POST',
             mode: 'cors',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
 
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`Server responded with status: ${response.status}. Error: ${errorText}`);
-        }
-        
-        // إذا كان هناك بيانات JSON في الاستجابة
-        const result = await response.json();
-        console.log("Server response:", result);
-
         showSuccessMessage();
-        
-        // إعادة تعيين النموذج بعد الإرسال بنجاح
         visitForm.reset();
+        submitBtn.disabled = false;
+        loadingSpinner.classList.add('hidden');
         productsDisplayDiv.innerHTML = '';
         document.querySelectorAll('#productCategories input[type="checkbox"]').forEach(c => c.checked = false);
         inventoryItemsContainer.innerHTML = '';
         addInitialInventoryItem();
         toggleVisitSections(visitTypeSelect.value);
-
     } catch (error) {
         console.error("❌ فشل الإرسال:", error);
-        showErrorMessage(error.message || 'حدث خطأ أثناء إرسال البيانات.');
-    } finally {
-        // ✅ يتم تنفيذ هذا الجزء دائمًا سواء نجح الإرسال أم فشل
+        showErrorMessage('حدث خطأ أثناء إرسال البيانات.');
         submitBtn.disabled = false;
         loadingSpinner.classList.add('hidden');
     }
