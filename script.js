@@ -210,7 +210,7 @@ function addInitialInventoryItem() {
     addInventoryItem();
 }
 
-// ✅ الدالة المفقودة للتحقق من حالة المنتجات
+// ✅ الدالة المفقودة للتحقق من حالة المنتجات (التي تم إضافتها)
 function validateProductStatuses() {
     const allProductItems = productsDisplayDiv.querySelectorAll('.product-item');
     if (allProductItems.length > 0) {
@@ -308,7 +308,6 @@ async function handleSubmit(event) {
             return;
         }
 
-        // هذا السطر الآن يعمل بشكل صحيح
         if (!validateProductStatuses()) {
             submitBtn.disabled = false;
             loadingSpinner.classList.add('hidden');
@@ -353,12 +352,16 @@ async function handleSubmit(event) {
     console.log("📤 Sending payload:", payload);
 
     try {
-        await fetch(GOOGLE_SHEETS_WEB_APP_URL, {
+        const response = await fetch(GOOGLE_SHEETS_WEB_APP_URL, {
             method: 'POST',
-            mode: 'no-cors',
+            mode: 'cors', //  <-- تم التعديل هنا
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
+
+        if (!response.ok) {
+          throw new Error(`Server responded with status: ${response.status}`);
+        }
 
         showSuccessMessage();
         visitForm.reset();
