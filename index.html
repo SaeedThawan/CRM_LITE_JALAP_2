@@ -30,7 +30,7 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="form-group">
                         <label for="entryUserName">اسم المستخدم المدخل</label>
-                        <input type="text" id="entryUserName" name="Entry_User_Name" class="mt-1" value="Admin" readonly>
+                        <input type="text" id="entryUserName" name="Entry_User_Name" class="mt-1" required placeholder="أدخل اسم الموظف">
                     </div>
                     <div class="form-group">
                         <label for="salesRepName">اسم المندوب</label>
@@ -71,10 +71,9 @@
                         <label for="customerType">نوع العميل</label>
                         <select id="customerType" name="Customer_Type" class="mt-1">
                             <option value="">اختر نوع العميل</option>
-                            <option value="تجزئة">تجزئة</option>
-                            <option value="جملة">جملة</option>
-                            <option value="موزع">موزع</option>
-                            <option value="مؤسسة">مؤسسة</option>
+                            <option value="غذائيه">غذائيه</option>
+                            <option value="حلويات">حلويات</option>
+                            <option value="عام">عام</option>
                         </select>
                     </div>
                 </div>
