@@ -1,5 +1,5 @@
-// ✅ رابط تطبيق Google Apps Script المنشور (يرجى التأكد من أنه صحيح)
-const GOOGLE_SHEETS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyGbYUmSU8DjUgR9xHxLYHs8oIGWhsAVR8ahwEXOPvZM1hmmEpHybjGox-QV_KpRPJG/exec';
+// ✅ رابط تطبيق Google Apps Script المنشور
+const GOOGLE_SHEETS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyPflRJCq7ijV9vAKVIu4ESWoXgrBw_0GGPKBhHOO9PH_DUmdfLqZE91WBsIT7wV0yhcw/exec';
 
 // 🔽 تعريف المتغيرات العامة للبيانات
 let appData = {
@@ -54,18 +54,14 @@ const utils = {
 };
 
 // ✅ دالة لجلب البيانات من ملفات JSON بشكل غير متزامن
-async function fetchJsonData(url, signal) {
+async function fetchJsonData(url) {
     try {
-        const response = await fetch(url, { signal });
+        const response = await fetch(url);
         if (!response.ok) {
             throw new Error(`خطأ في تحميل البيانات من ${url}: ${response.statusText}`);
         }
         return await response.json();
     } catch (error) {
-        if (error.name === 'AbortError') {
-            console.warn(`⏳ تم إلغاء تحميل ${url}.`);
-            return [];
-        }
         console.error(`❌ فشل تحميل ${url}:`, error);
         showMessage.error(`فشل تحميل البيانات الأساسية من ${url}. يرجى التحقق من الملف والمحاولة مرة أخرى.`);
         return [];
@@ -98,8 +94,8 @@ async function loadAllData() {
 
         populateSelect(DOM.salesRepName, appData.salesReps, 'Sales_Rep_Name_AR', 'Sales_Rep_Name_AR');
         populateSelect(DOM.visitType, appData.types, 'Visit_Type_Name_AR', 'Visit_Type_Name_AR');
-        populateSelect(DOM.visitPurpose, appData.purposes, 'Visit_Purpose_AR', 'Visit_Purpose_AR');
-        populateSelect(DOM.visitOutcome, appData.outcomes, 'Visit_Outcome_AR', 'Visit_Outcome_AR');
+        populateSelect(DOM.visitPurpose, appData.purposes);
+        populateSelect(DOM.visitOutcome, appData.outcomes);
         
         populateCustomerDatalist();
         populateInventoryDatalist();
@@ -119,8 +115,8 @@ function populateSelect(select, list, valueKey, textKey) {
     if (Array.isArray(list) && list.length > 0) {
         list.forEach(item => {
             const option = document.createElement('option');
-            option.value = valueKey ? item[valueKey] : item;
-            option.textContent = textKey ? item[textKey] : item;
+            option.value = (valueKey && typeof item === 'object') ? item[valueKey] : item;
+            option.textContent = (textKey && typeof item === 'object') ? item[textKey] : item;
             select.appendChild(option);
         });
     }
