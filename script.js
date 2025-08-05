@@ -1,12 +1,10 @@
 // ✅ رابط تطبيق Google Apps Script المنشور
-const GOOGLE_SHEETS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwfmg3N7aKgNKbxmnFR8z-Avze3Cl_ecMtJcgCgMVsZ9FveW6we_0JhtwUNUBnHVFAsnA/exec';
+const GOOGLE_SHEETS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxcuDHoAseJaZY48OwtBciwDKG0tzN5cTlcQRPMqSg9hZNEuwPU4esWJ0UnfgZ-WrP2Gw/exec';
 
 // 🔽 تعريف المتغيرات العامة للبيانات
-// يتم تحميل هذه البيانات من ملفات JSON عند تحميل الصفحة
 let productsData = [], inventoryProductsData = [], salesRepresentatives = [], customersMain = [], visitOutcomes = [], visitPurposes = [], visitTypes = [];
 
 // 🔽 عناصر DOM (Document Object Model) المستخدمة
-// يتم جلب هذه العناصر مرة واحدة عند تحميل الصفحة لتحسين الأداء
 const visitForm = document.getElementById('visitForm');
 const entryUserNameInput = document.getElementById('entryUserName');
 const salesRepNameSelect = document.getElementById('salesRepName');
@@ -18,14 +16,18 @@ const visitOutcomeSelect = document.getElementById('visitOutcome');
 const customerTypeSelect = document.getElementById('customerType');
 const notesTextarea = document.getElementById('notes');
 const inventoryNotesTextarea = document.getElementById('inventoryNotes');
+
 const productCategoriesDiv = document.getElementById('productCategories');
 const productsDisplayDiv = document.getElementById('productsDisplay');
+
 const inventorySectionDiv = document.getElementById('inventorySection');
 const inventoryListDatalist = document.getElementById('inventoryList');
 const inventoryItemsContainer = document.getElementById('inventoryItemsContainer');
 const addInventoryItemBtn = document.getElementById('addInventoryItem');
+
 const normalVisitRelatedFieldsDiv = document.getElementById('normalVisitRelatedFields');
 const normalProductSectionDiv = document.getElementById('normalProductSection');
+
 const submitBtn = document.getElementById('submitBtn');
 const loadingSpinner = document.getElementById('loadingSpinner');
 
@@ -65,7 +67,6 @@ async function fetchJsonData(url) {
     } catch (error) {
         console.error(`❌ فشل تحميل ${url}:`, error);
         showErrorMessage(`فشل تحميل البيانات الأساسية من ${url}. يرجى التحقق من الملف والمحاولة مرة أخرى.`);
-        // إرجاع مصفوفة فارغة لتجنب تعطل التطبيق بالكامل
         return [];
     }
 }
@@ -90,7 +91,6 @@ async function loadAllData() {
         fetchJsonData('visit_types.json')
     ]);
 
-    // تعبئة عناصر النموذج بالبيانات المحملة
     populateSelect(salesRepNameSelect, salesRepresentatives, 'Sales_Rep_Name_AR', 'Sales_Rep_Name_AR');
     populateCustomerDatalist();
     populateSelect(visitTypeSelect, visitTypes, 'Visit_Type_Name_AR', 'Visit_Type_Name_AR');
@@ -102,7 +102,6 @@ async function loadAllData() {
 
 // ✅ وظائف لتعبئة القوائم المنسدلة والداتاليستات
 function populateSelect(select, list, valueKey, textKey) {
-    // إزالة جميع الخيارات ما عدا الخيار الأول (الاختيار الافتراضي)
     while (select.children.length > 1) select.removeChild(select.lastChild);
     list.forEach(item => {
         const option = document.createElement('option');
@@ -126,7 +125,6 @@ function populateInventoryDatalist() {
     inventoryProductsData.forEach(product => {
         const option = document.createElement('option');
         option.value = product.Product_Name_AR;
-        // تخزين كافة تفاصيل المنتج في dataset
         for (const key in product) {
             const camelKey = key.replace(/_(\w)/g, (_, c) => c.toUpperCase());
             option.dataset[camelKey] = product[key];
@@ -154,7 +152,6 @@ function setupProductCategories() {
             <label for="cat-${category}" class="ml-2">${category}</label>
         `;
         productCategoriesDiv.appendChild(div);
-        // إضافة مستمع حدث لتغيير حالة المنتجات عند تحديد الفئة
         div.querySelector('input').addEventListener('change', e => toggleProductsDisplay(category, e.target.checked));
     }
 }
@@ -164,7 +161,6 @@ function toggleProductsDisplay(category, show) {
     if (!products) return;
 
     if (show) {
-        // إنشاء عناصر المنتجات باستخدام DocumentFragment لتحسين الأداء
         const fragment = document.createDocumentFragment();
         products.forEach(product => {
             const uniqueId = generateUniqueID('status');
@@ -182,7 +178,6 @@ function toggleProductsDisplay(category, show) {
         });
         productsDisplayDiv.appendChild(fragment);
     } else {
-        // إزالة العناصر الخاصة بهذه الفئة
         productsDisplayDiv.querySelectorAll(`[data-category="${category}"]`).forEach(el => el.remove());
     }
 }
@@ -226,7 +221,6 @@ async function handleSubmit(event) {
     const selectedVisitType = visitTypeSelect.value;
     let payload = {};
 
-    // 1. التحقق من الحقول الأساسية المشتركة
     if (!entryUserNameInput.value || !salesRepNameSelect.value || !customerNameInput.value || !selectedVisitType) {
         showWarningMessage('يرجى تعبئة جميع الحقول الأساسية (اسم الموظف، المندوب، العميل، ونوع الزيارة).');
         submitBtn.disabled = false;
@@ -235,7 +229,6 @@ async function handleSubmit(event) {
     }
 
     if (selectedVisitType === 'جرد استثنائي') {
-        // 2. معالجة نموذج الجرد الاستثنائي
         const collectedInventoryData = [];
         const inventoryItems = inventoryItemsContainer.querySelectorAll('.inventory-item');
         let hasValidItem = false;
@@ -247,10 +240,8 @@ async function handleSubmit(event) {
                 const unitLabel = div.querySelector('[name="Unit_Label"]')?.value || '';
                 const expirationDate = div.querySelector('[name="Expiration_Date"]')?.value || '';
 
-                // إذا كان السطر فارغاً بالكامل، تجاهله
                 if (!productName && !quantity && !unitLabel && !expirationDate) return;
 
-                // التحقق من أن جميع حقول السطر ممتلئة
                 if (!productName || !quantity || !unitLabel || !expirationDate) {
                     showWarningMessage('يرجى تعبئة جميع حقول الجرد لكل منتج. إذا لم تكن بحاجة للسطر، يمكنك حذفه.');
                     throw new Error('Invalid inventory data');
@@ -297,7 +288,6 @@ async function handleSubmit(event) {
             data: collectedInventoryData
         };
     } else {
-        // 3. معالجة نموذج الزيارة العادية
         if (!visitPurposeSelect.value || !visitOutcomeSelect.value || !customerTypeSelect.value) {
             showWarningMessage('يرجى تعبئة حقول الغرض والنتيجة ونوع العميل.');
             submitBtn.disabled = false;
@@ -305,7 +295,6 @@ async function handleSubmit(event) {
             return;
         }
         
-        // 4. التحقق من حالة المنتجات
         const available = [], unavailable = [];
         let allProductsChecked = true;
         const productsDivs = productsDisplayDiv.querySelectorAll('.product-item');
@@ -352,7 +341,6 @@ async function handleSubmit(event) {
         };
     }
 
-    // 5. إرسال البيانات إلى Google Sheets
     try {
         console.log("📤 Sending payload:", payload);
         const response = await fetch(GOOGLE_SHEETS_WEB_APP_URL, {
@@ -384,7 +372,6 @@ async function handleSubmit(event) {
     }
 }
 
-// ✅ تبديل الأقسام حسب نوع الزيارة
 function toggleVisitSections(type) {
     if (type === 'جرد استثنائي') {
         normalVisitRelatedFieldsDiv.classList.add('hidden');
@@ -394,12 +381,10 @@ function toggleVisitSections(type) {
         normalVisitRelatedFieldsDiv.classList.remove('hidden');
         normalProductSectionDiv.classList.remove('hidden');
         inventorySectionDiv.classList.add('hidden');
-        // عند التبديل من الجرد إلى زيارة عادية، نقوم بإعادة تهيئة قسم الجرد
         addInitialInventoryItem();
     }
 }
 
-// ✅ إعادة تهيئة النموذج بعد الإرسال الناجح
 function resetFormState() {
     productsDisplayDiv.innerHTML = '';
     document.querySelectorAll('#productCategories input[type="checkbox"]').forEach(c => c.checked = false);
@@ -407,23 +392,15 @@ function resetFormState() {
     toggleVisitSections(visitTypeSelect.value);
 }
 
-// ✅ أحداث الصفحة
 document.addEventListener('DOMContentLoaded', () => {
-    // تحميل البيانات عند بدء تشغيل التطبيق
     loadAllData();
-    // إضافة أول سطر في قسم الجرد بشكل افتراضي
     addInitialInventoryItem();
-    // ربط دالة الإرسال بحدث تقديم النموذج
     visitForm.addEventListener('submit', handleSubmit);
-    // ربط دالة تبديل الأقسام بحدث تغيير نوع الزيارة
     visitTypeSelect.addEventListener('change', e => toggleVisitSections(e.target.value));
-    // ربط دالة إضافة سطر جديد بحدث النقر
     addInventoryItemBtn.addEventListener('click', addInventoryItem);
 
-    // إدارة حدث النقر على زر "حذف" في عناصر الجرد
     inventoryItemsContainer.addEventListener('click', e => {
         if (e.target.classList.contains('removeInventoryItem')) {
-            // منع حذف السطر الوحيد
             if (inventoryItemsContainer.children.length > 1) {
                 e.target.closest('.inventory-item').remove();
             } else {
@@ -432,6 +409,5 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // ضبط الحالة الأولية للنموذج بناءً على نوع الزيارة الافتراضي
     toggleVisitSections(visitTypeSelect.value);
 });
