@@ -1,5 +1,5 @@
 // ✅ رابط تطبيق Google Apps Script المنشور
-const GOOGLE_SHEETS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwfmg3N7aKgNKbxmnFR8z-Avze3Cl_ecMtJcgCgMVsZ9FveW6we_0JhtwUNUBnHVFAsnA/exec';
+const GOOGLE_SHEETS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxcuDHoAseJaZY48OwtBciwDKG0tzN5cTlcQRPMqSg9hZNEuwPU4esWJ0UnfgZ-WrP2Gw/exec';
 
 // 🔽 تعريف المتغيرات العامة للبيانات
 let productsData = [];
@@ -410,3 +410,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
     toggleVisitSections(visitTypeSelect.value);
 });
+
