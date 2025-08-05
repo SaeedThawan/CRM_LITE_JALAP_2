@@ -3,6 +3,8 @@ const GOOGLE_SHEETS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxcuD
 
 // 🔽 تعريف المتغيرات العامة للبيانات
 let productsData = [], inventoryProductsData = [], salesRepresentatives = [], customersMain = [], visitOutcomes = [], visitPurposes = [], visitTypes = [];
+// 🚩 متغير للتأكد من تحميل البيانات الأساسية
+let isDataLoaded = false;
 
 // 🔽 عناصر DOM (Document Object Model) المستخدمة
 const visitForm = document.getElementById('visitForm');
@@ -61,11 +63,13 @@ async function fetchJsonData(url) {
     try {
         const response = await fetch(url);
         if (!response.ok) {
+            // تحسين رسائل الخطأ لتكون أكثر دقة
             throw new Error(`خطأ في تحميل البيانات من ${url}: ${response.statusText}`);
         }
         return await response.json();
     } catch (error) {
         console.error(`❌ فشل تحميل ${url}:`, error);
+        // رسالة خطأ واضحة للمستخدم
         showErrorMessage(`فشل تحميل البيانات الأساسية من ${url}. يرجى التحقق من الملف والمحاولة مرة أخرى.`);
         return [];
     }
@@ -73,64 +77,88 @@ async function fetchJsonData(url) {
 
 // ✅ دالة رئيسية لتحميل جميع البيانات عند بدء التشغيل
 async function loadAllData() {
-    [
-        productsData,
-        inventoryProductsData,
-        salesRepresentatives,
-        customersMain,
-        visitOutcomes,
-        visitPurposes,
-        visitTypes
-    ] = await Promise.all([
-        fetchJsonData('products.json'),
-        fetchJsonData('inventory_products.json'),
-        fetchJsonData('sales_representatives.json'),
-        fetchJsonData('customers_main.json'),
-        fetchJsonData('visit_outcomes.json'),
-        fetchJsonData('visit_purposes.json'),
-        fetchJsonData('visit_types.json')
-    ]);
+    try {
+        const [
+            products,
+            inventoryProducts,
+            salesReps,
+            customers,
+            outcomes,
+            purposes,
+            types
+        ] = await Promise.all([
+            fetchJsonData('products.json'),
+            fetchJsonData('inventory_products.json'),
+            fetchJsonData('sales_representatives.json'),
+            fetchJsonData('customers_main.json'),
+            fetchJsonData('visit_outcomes.json'),
+            fetchJsonData('visit_purposes.json'),
+            fetchJsonData('visit_types.json')
+        ]);
 
-    populateSelect(salesRepNameSelect, salesRepresentatives, 'Sales_Rep_Name_AR', 'Sales_Rep_Name_AR');
-    populateCustomerDatalist();
-    populateSelect(visitTypeSelect, visitTypes, 'Visit_Type_Name_AR', 'Visit_Type_Name_AR');
-    populateSelect(visitPurposeSelect, visitPurposes);
-    populateSelect(visitOutcomeSelect, visitOutcomes);
-    setupProductCategories();
-    populateInventoryDatalist();
+        productsData = products;
+        inventoryProductsData = inventoryProducts;
+        salesRepresentatives = salesReps;
+        customersMain = customers;
+        visitOutcomes = outcomes;
+        visitPurposes = purposes;
+        visitTypes = types;
+
+        populateSelect(salesRepNameSelect, salesRepresentatives, 'Sales_Rep_Name_AR', 'Sales_Rep_Name_AR');
+        populateCustomerDatalist();
+        populateSelect(visitTypeSelect, visitTypes, 'Visit_Type_Name_AR', 'Visit_Type_Name_AR');
+        populateSelect(visitPurposeSelect, visitPurposes);
+        populateSelect(visitOutcomeSelect, visitOutcomes);
+        setupProductCategories();
+        populateInventoryDatalist();
+        
+        // 🚩 تم تحميل البيانات بنجاح، يمكن الآن إرسال النموذج
+        isDataLoaded = true;
+        console.log("✅ تم تحميل جميع البيانات الأساسية بنجاح.");
+    } catch (error) {
+        // إذا فشل أي تحميل، يتم تعطيل زر الإرسال
+        submitBtn.disabled = true;
+        showErrorMessage("فشل تحميل البيانات الأساسية. يرجى إعادة تحميل الصفحة.");
+    }
 }
 
 // ✅ وظائف لتعبئة القوائم المنسدلة والداتاليستات
 function populateSelect(select, list, valueKey, textKey) {
     while (select.children.length > 1) select.removeChild(select.lastChild);
-    list.forEach(item => {
-        const option = document.createElement('option');
-        option.value = item[valueKey] || item;
-        option.textContent = item[textKey] || item;
-        select.appendChild(option);
-    });
+    if (list && list.length > 0) {
+        list.forEach(item => {
+            const option = document.createElement('option');
+            option.value = item[valueKey] || item;
+            option.textContent = item[textKey] || item;
+            select.appendChild(option);
+        });
+    }
 }
 
 function populateCustomerDatalist() {
     customerListDatalist.innerHTML = '';
-    customersMain.forEach(c => {
-        const option = document.createElement('option');
-        option.value = c.Customer_Name_AR;
-        customerListDatalist.appendChild(option);
-    });
+    if (customersMain && customersMain.length > 0) {
+        customersMain.forEach(c => {
+            const option = document.createElement('option');
+            option.value = c.Customer_Name_AR;
+            customerListDatalist.appendChild(option);
+        });
+    }
 }
 
 function populateInventoryDatalist() {
     inventoryListDatalist.innerHTML = '';
-    inventoryProductsData.forEach(product => {
-        const option = document.createElement('option');
-        option.value = product.Product_Name_AR;
-        for (const key in product) {
-            const camelKey = key.replace(/_(\w)/g, (_, c) => c.toUpperCase());
-            option.dataset[camelKey] = product[key];
-        }
-        inventoryListDatalist.appendChild(option);
-    });
+    if (inventoryProductsData && inventoryProductsData.length > 0) {
+        inventoryProductsData.forEach(product => {
+            const option = document.createElement('option');
+            option.value = product.Product_Name_AR;
+            for (const key in product) {
+                const camelKey = key.replace(/_(\w)/g, (_, c) => c.toUpperCase());
+                option.dataset[camelKey] = product[key];
+            }
+            inventoryListDatalist.appendChild(option);
+        });
+    }
 }
 
 // ✅ إدارة المنتجات للزيارات العادية
@@ -138,21 +166,23 @@ let productCategories = {};
 function setupProductCategories() {
     productCategoriesDiv.innerHTML = '';
     productCategories = {};
-    productsData.forEach(p => {
-        if (!productCategories[p.Category]) {
-            productCategories[p.Category] = [];
+    if (productsData && productsData.length > 0) {
+        productsData.forEach(p => {
+            if (!productCategories[p.Category]) {
+                productCategories[p.Category] = [];
+            }
+            productCategories[p.Category].push(p);
+        });
+        for (const category in productCategories) {
+            const div = document.createElement('div');
+            div.className = 'flex items-center';
+            div.innerHTML = `
+                <input type="checkbox" id="cat-${category}" value="${category}" class="h-5 w-5 cursor-pointer">
+                <label for="cat-${category}" class="ml-2">${category}</label>
+            `;
+            productCategoriesDiv.appendChild(div);
+            div.querySelector('input').addEventListener('change', e => toggleProductsDisplay(category, e.target.checked));
         }
-        productCategories[p.Category].push(p);
-    });
-    for (const category in productCategories) {
-        const div = document.createElement('div');
-        div.className = 'flex items-center';
-        div.innerHTML = `
-            <input type="checkbox" id="cat-${category}" value="${category}" class="h-5 w-5 cursor-pointer">
-            <label for="cat-${category}" class="ml-2">${category}</label>
-        `;
-        productCategoriesDiv.appendChild(div);
-        div.querySelector('input').addEventListener('change', e => toggleProductsDisplay(category, e.target.checked));
     }
 }
 
@@ -170,8 +200,8 @@ function toggleProductsDisplay(category, show) {
             div.innerHTML = `
                 <label>${product.Product_Name_AR}</label>
                 <div class="radio-group flex space-x-4 space-x-reverse">
-                    <label><input type="radio" name="status-${uniqueId}" value="متوفر" required> <span>متوفر</span></label>
-                    <label><input type="radio" name="status-${uniqueId}" value="غير متوفر" required> <span>غير متوفر</span></label>
+                    <label><input type="radio" name="status-${uniqueId}" value="متوفر"> <span>متوفر</span></label>
+                    <label><input type="radio" name="status-${uniqueId}" value="غير متوفر"> <span>غير متوفر</span></label>
                 </div>
             `;
             fragment.appendChild(div);
@@ -187,11 +217,11 @@ function addInventoryItem() {
     const template = `
         <div class="inventory-item border p-4 rounded relative bg-white">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div><label>المنتج</label><input type="text" name="Inventory_Product_Name_AR" list="inventoryList" placeholder="اسم المنتج" required></div>
-                <div><label>الكمية</label><input type="number" name="Inventory_Quantity" min="0" placeholder="الكمية" required></div>
-                <div><label>تاريخ الانتهاء</label><input type="date" name="Expiration_Date" required></div>
+                <div><label>المنتج</label><input type="text" name="Inventory_Product_Name_AR" list="inventoryList" placeholder="اسم المنتج"></div>
+                <div><label>الكمية</label><input type="number" name="Inventory_Quantity" min="0" placeholder="الكمية"></div>
+                <div><label>تاريخ الانتهاء</label><input type="date" name="Expiration_Date"></div>
                 <div><label>الوحدة</label>
-                    <select name="Unit_Label" required>
+                    <select name="Unit_Label">
                         <option value="">اختر الوحدة</option>
                         <option value="علبة">علبة</option>
                         <option value="شد">شد</option>
@@ -214,6 +244,13 @@ function addInitialInventoryItem() {
 // ✅ دالة رئيسية للتحقق من البيانات وإرسالها
 async function handleSubmit(event) {
     event.preventDefault();
+
+    // 🚩 منع الإرسال إذا لم يتم تحميل البيانات بعد
+    if (!isDataLoaded) {
+        showWarningMessage('البيانات الأساسية لم يتم تحميلها بعد. يرجى الانتظار أو إعادة تحميل الصفحة.');
+        return;
+    }
+
     submitBtn.disabled = true;
     loadingSpinner.classList.remove('hidden');
 
@@ -221,6 +258,7 @@ async function handleSubmit(event) {
     const selectedVisitType = visitTypeSelect.value;
     let payload = {};
 
+    // 1. التحقق من الحقول الأساسية المشتركة يدويًا
     if (!entryUserNameInput.value || !salesRepNameSelect.value || !customerNameInput.value || !selectedVisitType) {
         showWarningMessage('يرجى تعبئة جميع الحقول الأساسية (اسم الموظف، المندوب، العميل، ونوع الزيارة).');
         submitBtn.disabled = false;
@@ -229,6 +267,7 @@ async function handleSubmit(event) {
     }
 
     if (selectedVisitType === 'جرد استثنائي') {
+        // 2. معالجة نموذج الجرد الاستثنائي والتحقق اليدوي من حقوله
         const collectedInventoryData = [];
         const inventoryItems = inventoryItemsContainer.querySelectorAll('.inventory-item');
         let hasValidItem = false;
@@ -288,6 +327,7 @@ async function handleSubmit(event) {
             data: collectedInventoryData
         };
     } else {
+        // 3. معالجة نموذج الزيارة العادية والتحقق اليدوي من حقوله
         if (!visitPurposeSelect.value || !visitOutcomeSelect.value || !customerTypeSelect.value) {
             showWarningMessage('يرجى تعبئة حقول الغرض والنتيجة ونوع العميل.');
             submitBtn.disabled = false;
@@ -295,6 +335,7 @@ async function handleSubmit(event) {
             return;
         }
         
+        // 4. التحقق من حالة المنتجات
         const available = [], unavailable = [];
         let allProductsChecked = true;
         const productsDivs = productsDisplayDiv.querySelectorAll('.product-item');
@@ -341,6 +382,7 @@ async function handleSubmit(event) {
         };
     }
 
+    // 5. إرسال البيانات
     try {
         console.log("📤 Sending payload:", payload);
         const response = await fetch(GOOGLE_SHEETS_WEB_APP_URL, {
@@ -350,7 +392,8 @@ async function handleSubmit(event) {
         });
         
         if (!response.ok) {
-            throw new Error(`فشل إرسال البيانات. (${response.statusText})`);
+            // خطأ من الخادم (مثلاً 404 أو 500)
+            throw new Error(`خطأ من الخادم: ${response.status} ${response.statusText}`);
         }
 
         const result = await response.json();
@@ -360,18 +403,25 @@ async function handleSubmit(event) {
             visitForm.reset();
             resetFormState();
         } else {
+            // خطأ منطقي من كود Apps Script
             throw new Error(result.error || 'فشل الخادم في معالجة الطلب.');
         }
 
     } catch (error) {
         console.error("❌ فشل الإرسال:", error);
-        showErrorMessage('حدث خطأ أثناء إرسال البيانات: ' + error.message);
+        // التمييز بين أخطاء الشبكة وأخطاء الخادم
+        if (error.message.includes('Failed to fetch')) {
+            showErrorMessage('فشل الاتصال بالخادم. يرجى التحقق من اتصالك بالإنترنت والمحاولة مرة أخرى.');
+        } else {
+            showErrorMessage('حدث خطأ أثناء إرسال البيانات: ' + error.message);
+        }
     } finally {
         submitBtn.disabled = false;
         loadingSpinner.classList.add('hidden');
     }
 }
 
+// ✅ تبديل الأقسام حسب نوع الزيارة
 function toggleVisitSections(type) {
     if (type === 'جرد استثنائي') {
         normalVisitRelatedFieldsDiv.classList.add('hidden');
@@ -385,6 +435,7 @@ function toggleVisitSections(type) {
     }
 }
 
+// ✅ إعادة تهيئة النموذج بعد الإرسال الناجح
 function resetFormState() {
     productsDisplayDiv.innerHTML = '';
     document.querySelectorAll('#productCategories input[type="checkbox"]').forEach(c => c.checked = false);
@@ -392,7 +443,9 @@ function resetFormState() {
     toggleVisitSections(visitTypeSelect.value);
 }
 
+// ✅ أحداث الصفحة
 document.addEventListener('DOMContentLoaded', () => {
+    // تحميل البيانات عند بدء تشغيل التطبيق
     loadAllData();
     addInitialInventoryItem();
     visitForm.addEventListener('submit', handleSubmit);
