@@ -1,5 +1,5 @@
 // ✅ رابط تطبيق Google Apps Script المنشور
-const GOOGLE_SHEETS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxcuDHoAseJaZY48OwtBciwDKG0tzN5cTlcQRPMqSg9hZNEuwPU4esWJ0UnfgZ-WrP2Gw/exec';
+const GOOGLE_SHEETS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzRH0r1SPKLGwHvNYxPI1OnpEsucpc5pB59dUAeO5WZ_rPVq78EId7yHinA4WjmiJOfQg/exec';
 
 // 🔽 تعريف المتغيرات العامة للبيانات
 let productsData = [], inventoryProductsData = [], salesRepresentatives = [], customersMain = [], visitOutcomes = [], visitPurposes = [], visitTypes = [];
@@ -464,3 +464,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
     toggleVisitSections(visitTypeSelect.value);
 });
+
