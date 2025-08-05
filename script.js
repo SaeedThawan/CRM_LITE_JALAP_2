@@ -1,5 +1,5 @@
 // ✅ رابط تطبيق Google Apps Script المنشور
-const GOOGLE_SHEETS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzRH0r1SPKLGwHvNYxPI1OnpEsucpc5pB59dUAeO5WZ_rPVq78EId7yHinA4WjmiJOfQg/exec';
+const GOOGLE_SHEETS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyGbYUmSU8DjUgR9xHxLYHs8oIGWhsAVR8ahwEXOPvZM1hmmEpHybjGox-QV_KpRPJG/exec';
 
 // 🔽 تعريف المتغيرات العامة للبيانات
 let productsData = [], inventoryProductsData = [], salesRepresentatives = [], customersMain = [], visitOutcomes = [], visitPurposes = [], visitTypes = [];
@@ -63,13 +63,11 @@ async function fetchJsonData(url) {
     try {
         const response = await fetch(url);
         if (!response.ok) {
-            // تحسين رسائل الخطأ لتكون أكثر دقة
             throw new Error(`خطأ في تحميل البيانات من ${url}: ${response.statusText}`);
         }
         return await response.json();
     } catch (error) {
         console.error(`❌ فشل تحميل ${url}:`, error);
-        // رسالة خطأ واضحة للمستخدم
         showErrorMessage(`فشل تحميل البيانات الأساسية من ${url}. يرجى التحقق من الملف والمحاولة مرة أخرى.`);
         return [];
     }
@@ -112,11 +110,9 @@ async function loadAllData() {
         setupProductCategories();
         populateInventoryDatalist();
         
-        // 🚩 تم تحميل البيانات بنجاح، يمكن الآن إرسال النموذج
         isDataLoaded = true;
         console.log("✅ تم تحميل جميع البيانات الأساسية بنجاح.");
     } catch (error) {
-        // إذا فشل أي تحميل، يتم تعطيل زر الإرسال
         submitBtn.disabled = true;
         showErrorMessage("فشل تحميل البيانات الأساسية. يرجى إعادة تحميل الصفحة.");
     }
@@ -245,7 +241,6 @@ function addInitialInventoryItem() {
 async function handleSubmit(event) {
     event.preventDefault();
 
-    // 🚩 منع الإرسال إذا لم يتم تحميل البيانات بعد
     if (!isDataLoaded) {
         showWarningMessage('البيانات الأساسية لم يتم تحميلها بعد. يرجى الانتظار أو إعادة تحميل الصفحة.');
         return;
@@ -258,7 +253,6 @@ async function handleSubmit(event) {
     const selectedVisitType = visitTypeSelect.value;
     let payload = {};
 
-    // 1. التحقق من الحقول الأساسية المشتركة يدويًا
     if (!entryUserNameInput.value || !salesRepNameSelect.value || !customerNameInput.value || !selectedVisitType) {
         showWarningMessage('يرجى تعبئة جميع الحقول الأساسية (اسم الموظف، المندوب، العميل، ونوع الزيارة).');
         submitBtn.disabled = false;
@@ -267,7 +261,6 @@ async function handleSubmit(event) {
     }
 
     if (selectedVisitType === 'جرد استثنائي') {
-        // 2. معالجة نموذج الجرد الاستثنائي والتحقق اليدوي من حقوله
         const collectedInventoryData = [];
         const inventoryItems = inventoryItemsContainer.querySelectorAll('.inventory-item');
         let hasValidItem = false;
@@ -327,7 +320,6 @@ async function handleSubmit(event) {
             data: collectedInventoryData
         };
     } else {
-        // 3. معالجة نموذج الزيارة العادية والتحقق اليدوي من حقوله
         if (!visitPurposeSelect.value || !visitOutcomeSelect.value || !customerTypeSelect.value) {
             showWarningMessage('يرجى تعبئة حقول الغرض والنتيجة ونوع العميل.');
             submitBtn.disabled = false;
@@ -335,7 +327,6 @@ async function handleSubmit(event) {
             return;
         }
         
-        // 4. التحقق من حالة المنتجات
         const available = [], unavailable = [];
         let allProductsChecked = true;
         const productsDivs = productsDisplayDiv.querySelectorAll('.product-item');
@@ -382,7 +373,6 @@ async function handleSubmit(event) {
         };
     }
 
-    // 5. إرسال البيانات
     try {
         console.log("📤 Sending payload:", payload);
         const response = await fetch(GOOGLE_SHEETS_WEB_APP_URL, {
@@ -392,7 +382,6 @@ async function handleSubmit(event) {
         });
         
         if (!response.ok) {
-            // خطأ من الخادم (مثلاً 404 أو 500)
             throw new Error(`خطأ من الخادم: ${response.status} ${response.statusText}`);
         }
 
@@ -403,13 +392,11 @@ async function handleSubmit(event) {
             visitForm.reset();
             resetFormState();
         } else {
-            // خطأ منطقي من كود Apps Script
             throw new Error(result.error || 'فشل الخادم في معالجة الطلب.');
         }
 
     } catch (error) {
         console.error("❌ فشل الإرسال:", error);
-        // التمييز بين أخطاء الشبكة وأخطاء الخادم
         if (error.message.includes('Failed to fetch')) {
             showErrorMessage('فشل الاتصال بالخادم. يرجى التحقق من اتصالك بالإنترنت والمحاولة مرة أخرى.');
         } else {
@@ -445,7 +432,6 @@ function resetFormState() {
 
 // ✅ أحداث الصفحة
 document.addEventListener('DOMContentLoaded', () => {
-    // تحميل البيانات عند بدء تشغيل التطبيق
     loadAllData();
     addInitialInventoryItem();
     visitForm.addEventListener('submit', handleSubmit);
@@ -464,4 +450,3 @@ document.addEventListener('DOMContentLoaded', () => {
 
     toggleVisitSections(visitTypeSelect.value);
 });
-
