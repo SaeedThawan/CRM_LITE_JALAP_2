@@ -446,3 +446,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
     toggleVisitSections(DOM.visitType.value);
 });
+
